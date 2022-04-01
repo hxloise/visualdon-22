@@ -117,7 +117,7 @@ Promise.all([
         svg.selectAll("rect")
             .data(allUsers)//sélection du dataset
             .enter()//est appelé le même nombre de fois que le nombre de ligne dans le dataset, puis renvoie une sélection d'espace reservé pour chaque point qui n'a pas encore de rectangle (donc tous)
-            .append("rect")//applique ainsi un rectanlge dans le DOM  à chaque ligne du dataset qui n'a pas de rect 
+            .append("rect")//applique ainsi un rectanlge dans le DOM à chaque ligne du dataset qui n'a pas de rect 
             //compléter les attributs nécessaire au rectangle en svg
             .attr("x", function (d) { return x(d["nom_utilisateur"]) + 30 })
             .attr("y", function (d) { return y(d["titres_posts"].length)})
