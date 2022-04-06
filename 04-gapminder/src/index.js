@@ -2,7 +2,7 @@ import * as d3 from 'd3'
 import allpib from '../data/income_per_person_gdppercapita_ppp_inflation_adjusted.csv' //PIB par habitant par pays et pour chaque année depuis 1800
 import lifeEsper from '../data/life_expectancy_years.csv' //espérance de vie par pays et pour chaque année depuis 1800
 import population from '../data/population_total.csv' //population depuis 1800 par pays 
-
+import "./index.css"
 //------------------------------------------------------------------------------
 
 //Modifier les data du nbPopulation de 2021, pour les rendre exploitables
@@ -36,23 +36,25 @@ lifeEsper.forEach(pays => {
     }
 })
 
-//------------------------------------------------------------------------------
-
-const margin = { top: 10, right: 20, bottom: 30, left: 50 }
-const width = 1500 - margin.left - margin.right
-const height = 600 - margin.top - margin.bottom
-
-
 //ajouter au body une div qui sera parent du svg, la rendre reconnaissable 
 d3.select("body")
     .append("div")
     .attr('id', 'graph-stat-country')
 
+//modifier la taille en fonction de la largeur de la fenêtre
+let wDiv = document.querySelector("#graph-stat-country").offsetWidth
+let hDiv = document.querySelector("#graph-stat-country").offsetHeight
+//------------------------------------------------------------------------------
+
+const margin = { top: 50, right: 50, bottom: 50, left: 50 }
+const width = wDiv - margin.left - margin.right
+const height = hDiv - margin.top - margin.bottom
+
 //ajouter le svg au corps de la page (plus précisemment dans la div)
 const svg = d3.select("#graph-stat-country")
     .append("svg")
     .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom + 200)
+    .attr("height", height + margin.top + margin.bottom + 100)
     .append("g")
     //l'attribut transforme s'applique à l'élément et à ces enfants
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
@@ -109,7 +111,7 @@ console.log("Le plus petit nombre de personne réunit dans un pays en 2021 est d
 //------------------------------------------------------------------------------
 
 //définir l'échelle de l'axe x
-let x = d3.scaleLinear()
+let x = d3.scaleSqrt()
     .domain([0, maxPib * 1.05])
     //la plage est définie comme étendue minimale et maximale des bandes
     .range([0, width])
@@ -135,10 +137,10 @@ svg.append("g")
     //translation de l'axe pour le positionner au bon endroit, en l'occurence descendre le graphe de sa taille en y 
     .attr("transform", "translate(0," + height + ")")
     .call(d3.axisBottom(x))
-    .call(d3.axisBottom(x).tickSize(-height * 1.3).ticks(10))
+    .call(d3.axisBottom(x).tickSize(-height).tickFormat(d3.format('~s')))
 
 //dessiner l'axe y selon l'échelle établie
-svg.append("g").call(d3.axisLeft(y)).call(d3.axisLeft(y).tickSize(-width * 1.3).ticks(10))
+svg.append("g").call(d3.axisLeft(y)).call(d3.axisLeft(y).tickSize(-width))
 
 //------------------------------------------------------------------------------
 
@@ -148,16 +150,16 @@ svg.selectAll(".tick line").attr("stroke", "white").attr("opacity", "0.3")
 //ajouter description axe X 
 svg.append("text")
     .attr("text-anchor", "end")
-    .attr("x", width / 2 + margin.left)
-    .attr("y", height + margin.top + 30)
-    .text("PIB par habitant [CHF]");
+    .attr("x", wDiv / 2 + margin.left)
+    .attr("y", height + margin.top)
+    .text("Log du PIB par habitant [CHF]");
 
 //ajouter description axe Y
 svg.append("text")
     .attr("text-anchor", "end")
     .attr("transform", "rotate(-90)")
     .attr("y", -margin.left + 20)
-    .attr("x", -margin.top - height / 2 + 20)
+    .attr("x", -margin.top - height / 2 + 100)
     .text("Espérance de vie")
 
 //---------------------------------------------------------------------------------------------
@@ -184,9 +186,104 @@ svg.append('g')
     .style("fill", "#FF7A48")
     .attr("opacity", "0.7")
     .attr("stroke", "black")
-
 //---------------------------------------------------------------------------------------------
+d3.select("body").append("h3")
+    .attr('id', 'separateur')
+    .text("Let's give a look of l'espérance de vie sur une map")
+//---------------------------------------------------------------------------------------------
+//Ajout div - marges - svg
+d3.select("body").append("Mapdiv")
+    .attr("id", "map")
 
+const Mapmargin = { top: 20, right: 20, bottom: 30, left: 50 }
+const Mapwidth = 650 - Mapmargin.left - Mapmargin.right
+const Mapheight = 500 - Mapmargin.top - Mapmargin.bottom
+
+const Mapsvg = d3.select("#map")
+    .append("svg")
+    .attr("width", Mapwidth + Mapmargin.left + Mapmargin.right)
+    .attr("height", Mapheight + Mapmargin.top + Mapmargin.bottom + 100)
+    .append("g")
+    .attr("transform", "translate(" + Mapmargin.left + "," + Mapmargin.top + ")")
+//---------------------------------------------------------------------------------------------
+//Optimisation utilisation des données
+let listPays = []
+lifeEsper.forEach(pays => {
+//création d'un objet, pour pouvoir modifier index
+    let paysD = {}
+    paysD[pays['country']] = pays['2021']
+    listPays.push(paysD)
+})
+//---------------------------------------------------------------------------------------------
+//Création de la projection
+//d3.geoPath() est appelé pour générer un Path à partir des coordonnées cartésiennes
+let path = d3.geoPath()
+//définir le type de projection
+let projection = d3.geoMercator()
+//latitude et longitude de la projection
+    .center([0,20])
+//taille de la projection
+    .scale(70)
+//centrer
+    .translate([Mapwidth/2, Mapheight/2])
+//---------------------------------------------------------------------------------------------
+let data = new Map()
+let thresholdScale = d3.scaleThreshold()
+    .domain([50, 60, 70, 80, 90, 100])
+    .range(d3.schemeBlues[7])
+//---------------------------------------------------------------------------------------------
+//Gestion des hover
+let mouseOver = function(d) {
+    d3.selectAll(".Country")
+      .transition()
+      .duration(200)
+      .style("opacity", .5)
+    d3.select(this)
+      .transition()
+      .duration(200)
+      .style("opacity", 1)
+  }
+
+let mouseLeave = function(d) {
+    d3.selectAll(".Country")
+      .transition()
+      .duration(200)
+      .style("opacity", .8)
+    d3.select(this)
+      .transition()
+      .duration(200)
+      .style("stroke", "transparent")
+  }
+//---------------------------------------------------------------------------------------------
+//Dessiner la map
+//Données au format geojson
+d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson").then(function(d){
+    Mapsvg.append('g')
+    .selectAll('path')
+    //stocker les données dans une liste
+    .data(d.features)
+    .join("path")
+    .attr("d", d3.geoPath()
+    .projection(projection))
+    //récupérer le pays, pouvoir sélectionner dans le tab
+    .attr("id", function(d){ return d.properties.name;})
+    .attr("fill", function (d) {
+        let number = 0;
+        listPays.forEach(country => {
+            if (typeof country[this.id] != "undefined") {
+              //récupérer l'espérance de vie du pays
+              number = country[this.id]
+            }
+        })
+        //utiliser l'échelle de couleur
+        return thresholdScale(number);
+      })
+      .attr("class", function(d){ return "Country" } )
+      .style("opacity", .8)
+      .on("mouseover", mouseOver )
+      .on("mouseleave", mouseLeave )
+})
+//---------------------------------------------------------------------------------------------
 //fonction pour convertir les string en int
 function strToInt(str) {
     //ici, deux types de cas à prendre en compte
