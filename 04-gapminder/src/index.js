@@ -3,13 +3,14 @@ import allpib from '../data/income_per_person_gdppercapita_ppp_inflation_adjuste
 import lifeEsper from '../data/life_expectancy_years.csv' //espérance de vie par pays et pour chaque année depuis 1800
 import population from '../data/population_total.csv' //population depuis 1800 par pays 
 import "./index.css"
+
 //------------------------------------------------------------------------------
 
 //Modifier les data du nbPopulation de 2021, pour les rendre exploitables
 
 population.forEach(pays => {
     (Object.keys(pays)).forEach(key => {
-        if (typeof  pays[key] == 'string' && key !== 'country') {
+        if (typeof pays[key] == 'string' && key !== 'country') {
             pays[key] = strToInt(pays[key])
         }
     })
@@ -31,7 +32,7 @@ lifeEsper.forEach(pays => {
         do {
             i--
         } while (pays[i] == null);
-        console.log('en année ', i, 'le pib de', pays['country'],'était de', pays[i])
+        console.log('en année ', i, 'le pib de', pays['country'], 'était de', pays[i])
         pays[2021] = pays[i]
     }
 })
@@ -44,6 +45,7 @@ d3.select("body")
 //modifier la taille en fonction de la largeur de la fenêtre
 let wDiv = document.querySelector("#graph-stat-country").offsetWidth
 let hDiv = document.querySelector("#graph-stat-country").offsetHeight
+
 //------------------------------------------------------------------------------
 
 const margin = { top: 50, right: 50, bottom: 50, left: 50 }
@@ -58,6 +60,8 @@ const svg = d3.select("#graph-stat-country")
     .append("g")
     //l'attribut transforme s'applique à l'élément et à ces enfants
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+
+//-------------------------------------------------------------------------------
 
 //ajouter une couleur de fond grâce à un rectanlge
 svg.append("rect")
@@ -99,9 +103,9 @@ population.forEach(pays => {
     if (pays[2021] > maxPop) {
         maxPop = pays[2021]
     }
-    if(population[0] == pays){
+    if (population[0] == pays) {
         minPop = pays[2021]
-    }else if(pays[2021] < minPop){
+    } else if (pays[2021] < minPop) {
         minPop = pays[2021]
     }
 })
@@ -186,11 +190,15 @@ svg.append('g')
     .style("fill", "#FF7A48")
     .attr("opacity", "0.7")
     .attr("stroke", "black")
+
 //---------------------------------------------------------------------------------------------
+
 d3.select("body").append("h3")
     .attr('id', 'separateur')
-    .text("Let's give a look of l'espérance de vie sur une map")
+    .text("Let's give a look of l'espérance de vie sur une map choroplète...")
+
 //---------------------------------------------------------------------------------------------
+
 //Ajout div - marges - svg
 d3.select("body").append("Mapdiv")
     .attr("id", "map")
@@ -205,85 +213,98 @@ const Mapsvg = d3.select("#map")
     .attr("height", Mapheight + Mapmargin.top + Mapmargin.bottom + 100)
     .append("g")
     .attr("transform", "translate(" + Mapmargin.left + "," + Mapmargin.top + ")")
+
 //---------------------------------------------------------------------------------------------
+
 //Optimisation utilisation des données
 let listPays = []
 lifeEsper.forEach(pays => {
-//création d'un objet, pour pouvoir modifier index
+    //création d'un objet, pour pouvoir modifier index
     let paysD = {}
     paysD[pays['country']] = pays['2021']
     listPays.push(paysD)
 })
+
 //---------------------------------------------------------------------------------------------
-//Création de la projection
-//d3.geoPath() est appelé pour générer un Path à partir des coordonnées cartésiennes
+
+//Création de la projection, d3.geoPath() est appelé pour générer un Path à partir des coordonnées cartésiennes
 let path = d3.geoPath()
 //définir le type de projection
 let projection = d3.geoMercator()
-//latitude et longitude de la projection
-    .center([0,20])
-//taille de la projection
-    .scale(70)
-//centrer
-    .translate([Mapwidth/2, Mapheight/2])
-//---------------------------------------------------------------------------------------------
-let data = new Map()
-let thresholdScale = d3.scaleThreshold()
-    .domain([50, 60, 70, 80, 90, 100])
-    .range(d3.schemeBlues[7])
-//---------------------------------------------------------------------------------------------
-//Gestion des hover
-let mouseOver = function(d) {
-    d3.selectAll(".Country")
-      .transition()
-      .duration(200)
-      .style("opacity", .5)
-    d3.select(this)
-      .transition()
-      .duration(200)
-      .style("opacity", 1)
-  }
+    //latitude et longitude de la projection
+    .center([0, 20])
+    //taille de la projection
+    .scale(90)
+    //centrer
+    .translate([Mapwidth / 2, Mapheight / 2])
 
-let mouseLeave = function(d) {
-    d3.selectAll(".Country")
-      .transition()
-      .duration(200)
-      .style("opacity", .8)
-    d3.select(this)
-      .transition()
-      .duration(200)
-      .style("stroke", "transparent")
-  }
 //---------------------------------------------------------------------------------------------
-//Dessiner la map
-//Données au format geojson
-d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson").then(function(d){
+
+let data = new Map()
+//échelle des couleurs
+let thresholdScale = d3.scaleThreshold()
+    .domain([50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100])
+    .range(d3.schemeOranges[8])
+
+//---------------------------------------------------------------------------------------------
+
+//Dessiner la map, données au format geojson
+d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson").then(function (d) {
     Mapsvg.append('g')
-    .selectAll('path')
-    //stocker les données dans une liste
-    .data(d.features)
-    .join("path")
-    .attr("d", d3.geoPath()
-    .projection(projection))
-    //récupérer le pays, pouvoir sélectionner dans le tab
-    .attr("id", function(d){ return d.properties.name;})
-    .attr("fill", function (d) {
-        let number = 0;
-        listPays.forEach(country => {
-            if (typeof country[this.id] != "undefined") {
-              //récupérer l'espérance de vie du pays
-              number = country[this.id]
-            }
+        .selectAll('path')
+        //stocker les données dans une liste
+        .data(d.features)
+        .join("path")
+        //l'attribut d définit un tracé à dessiner (liste de commande avec lettre et nombre)
+        .attr("d", path.projection(projection))
+        //récupérer le pays dans la liste généré. Obj:pouvoir sélectionner dans le tab
+        .attr("id", function (d) { return d.properties.name; })
+        .attr("fill", function (d) {
+            let number = 0;
+            listPays.forEach(country => {
+                if (typeof country[this.id] != "undefined") {
+                    //récupérer l'espérance de vie du pays
+                    number = country[this.id]
+                }
+            })
+            //utiliser l'échelle de couleur
+            return thresholdScale(number);
         })
-        //utiliser l'échelle de couleur
-        return thresholdScale(number);
-      })
-      .attr("class", function(d){ return "Country" } )
-      .style("opacity", .8)
-      .on("mouseover", mouseOver )
-      .on("mouseleave", mouseLeave )
+        .attr("class", function (d) { return "Country" })
+        .style("opacity", 1)
+        .on("mouseover", mouseOver)
+        .on("mouseleave", mouseLeave)
 })
+
 //---------------------------------------------------------------------------------------------
+
+//Fonction gestion des hover
+let mouseOver = function (d) {
+    d3.selectAll(".Country")
+    //modification de valeur de l'attribut file de tous les pays
+        .transition()
+        //temps que prennent les pays pour baisser en opacité
+        .duration(200)
+        .style("opacity", .5)
+    d3.select(this)//le this est le path du pays
+        .transition()
+        .duration(200)
+        .style("opacity", 1)
+}
+
+let mouseLeave = function (d) {
+    d3.selectAll(".Country")
+        .transition()
+        .duration(200)
+        .style("opacity", 1)
+    d3.select(this)
+        .transition()
+        .duration(200)
+        .style("stroke", "transparent")
+}
+
+//---------------------------------------------------------------------------------------------
+
 //fonction pour convertir les string en int
 function strToInt(str) {
     //ici, deux types de cas à prendre en compte
