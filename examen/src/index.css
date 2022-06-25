@@ -1,0 +1,76 @@
+body{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 2% 2% 2% 2%;
+    /* height: 100vh; */
+}
+#nav{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 50%;
+    margin-bottom: 2%;
+}
+.btn{
+    color: white;
+    background-color: black;
+    opacity: 100%;
+    border-radius: 50px;
+    border: none;
+    height: 3em;
+    width: 8em;
+    cursor: pointer;
+}
+.btn:hover{
+    opacity: 80%;
+}
+.grid-container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 80vh;
+    /* background-color: red; */
+}
+.data-container{
+    display: flex;
+    justify-content: space-between;
+    width: 50%;
+    height: 80vh;
+    /* background-color: blue; */
+}
+.visualisation-container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 150vh;
+    /* background-color: green; */
+}
+h3{
+    text-align: center;
+}
+div.tooltip-donut {
+    position: fixed;
+    text-align: left;
+    padding: .5rem;
+    background: #00030D;
+    color: white;
+    border-radius: 10px;
+    pointer-events: none;
+    font-size: 1rem;
+    z-index: 2;
+  }
+.web-scraping-container{
+    display: flex;
+    width: 100%;
+    height: 80vh;
+    background-color: gray;
+}
+.hidden{
+    display: none;
+}
+.select{
+   opacity: 80%;
+}
